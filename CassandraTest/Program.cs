@@ -1,6 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Cassandra;
+using Cassandra.Data.Linq;
+using Cassandra.Mapping;
+using CassandraTest.Db;
+using CassandraTest.Models;
 
 namespace CassandraTest
 {
@@ -8,16 +14,35 @@ namespace CassandraTest
     {
         static void Main(string[] args)
         {
-            Cluster cluster = Cluster.Builder().AddContactPoint("127.0.0.1").Build();
-            ISession session = cluster.Connect("demo");
-
-            session.Execute(@"
-                insert into users (lastname, age, city, email, firstname) values ('Jones', 35, 'Austin', 'bob@example.com', 'Bob')
-            ");
+            const string KEYSPACE = "cassandratest";
             
-            Row result = session.Execute("select * from users where lastname='Jones'").First();
-            Console.WriteLine("{0} {1}", result["firstname"], result["age"]);
+            // configure mappings
+            MappingConfiguration.Global.Define<CustomMappingConfiguration>();
 
+            var clusterManager = new ClusterManager();
+            
+            using (var session = clusterManager.CreateSession(KEYSPACE))
+            {
+                // create keyspace
+                session.CreateKeyspaceIfNotExists(KEYSPACE, new Dictionary<string, string>()
+                {
+                    {"class", "SimpleStrategy"},
+                    {"replication_factor", "3"},
+                });
+                session.ChangeKeyspace(KEYSPACE);
+                
+                // create test column families
+                var keyspaceContext = new KeyspaceContext(session);
+                keyspaceContext.Init().Wait();
+                
+                // seed them with huge amount of data
+                DataSeeder seeder = new DataSeeder(keyspaceContext);
+                seeder.Seed().Wait();
+                
+                // read that data
+            }
+
+            Console.WriteLine("Press ENTER: ");
             Console.ReadKey();
         }
     }
