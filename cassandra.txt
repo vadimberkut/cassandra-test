@@ -2,6 +2,8 @@
 Linux version
 cat /etc/*-release
 
+docker pull cassandra:3.11.4
+
 Run in docker and expose port
 docker run --name cassandra-test -d -p 9042:9042 cassandra:3.11.4
 

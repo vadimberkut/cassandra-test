@@ -76,6 +76,7 @@ namespace CassandraTest.Db
                     }
                 
                     precessedChunks.Add(chunk);
+                    session.Dispose();
                     Console.WriteLine($"Users {precessedChunks.Count * CHUNK_SIZE}/{USER_COUNT}. Chunk: {chunk + 1}/{chunkCount}");
                 });
                 
