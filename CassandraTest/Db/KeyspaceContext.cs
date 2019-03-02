@@ -14,13 +14,13 @@ namespace CassandraTest.Db
         public KeyspaceContext(ISession session)
         {
             _session = session;
+            
+            UserTable = new Table<UserEntity>(_session);
+            NoteTable = new Table<NoteEntity>(_session);
         }
 
         public async Task Init()
         {
-            UserTable = new Table<UserEntity>(_session);
-            NoteTable = new Table<NoteEntity>(_session);
-
             await CreateTables();
         }
 
@@ -40,6 +40,12 @@ namespace CassandraTest.Db
                 UserTable.DropIfExistsAsync(),
                 NoteTable.DropIfExistsAsync(),
             });
+        }
+        
+        public async Task ResetKeyspace()
+        {
+            await DropTables();
+            await CreateTables();
         }
         
         public Table<UserEntity> UserTable { get; set; }

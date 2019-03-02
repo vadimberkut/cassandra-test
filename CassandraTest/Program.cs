@@ -14,33 +14,30 @@ namespace CassandraTest
     {
         static void Main(string[] args)
         {
-            const string KEYSPACE = "cassandratest";
-            
             // configure mappings
             MappingConfiguration.Global.Define<CustomMappingConfiguration>();
 
             var clusterManager = new ClusterManager();
             
-            using (var session = clusterManager.CreateSession(KEYSPACE))
+            // create keyspace
+            clusterManager.CreateKeyspaceIfNotExists();
+            
+            using (var session = clusterManager.CreateSession())
             {
-                // create keyspace
-                session.CreateKeyspaceIfNotExists(KEYSPACE, new Dictionary<string, string>()
-                {
-                    {"class", "SimpleStrategy"},
-                    {"replication_factor", "3"},
-                });
-                session.ChangeKeyspace(KEYSPACE);
-                
                 // create test column families
-                var keyspaceContext = new KeyspaceContext(session);
+                var keyspaceContext = clusterManager.CreateKeyspaceContext(session);
                 keyspaceContext.Init().Wait();
                 
-                // seed them with huge amount of data
-                DataSeeder seeder = new DataSeeder(keyspaceContext);
-                seeder.Seed().Wait();
-                
-                // read that data
+                // reset keyspace
+                // keyspaceContext.ResetKeyspace().Wait();
             }
+            
+            // seed them with huge amount of data
+            DataSeeder seeder = new DataSeeder(clusterManager);
+            seeder.SeedAsync().Wait();
+            //seeder.SeedUsingBatchAsync().Wait();
+                
+            // read that data
 
             Console.WriteLine("Press ENTER: ");
             Console.ReadKey();

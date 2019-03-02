@@ -1,9 +1,11 @@
+using System.Collections.Generic;
 using Cassandra;
 
 namespace CassandraTest.Db
 {
     public class ClusterManager
     {
+        const string KEYSPACE = "cassandratest";
         private Cluster _cluster = null;
         
         public ClusterManager()
@@ -11,9 +13,19 @@ namespace CassandraTest.Db
             _cluster = Cluster.Builder().AddContactPoint("127.0.0.1").Build();
         }
 
-        public ISession CreateSession(string keySpace)
+        public void CreateKeyspaceIfNotExists()
         {
-            return _cluster.Connect(keySpace);
+            var session = _cluster.Connect();
+            session.CreateKeyspaceIfNotExists(KEYSPACE, new Dictionary<string, string>()
+            {
+                {"class", "SimpleStrategy"},
+                {"replication_factor", "3"},
+            });
+        }
+
+        public ISession CreateSession()
+        {
+            return _cluster.Connect(KEYSPACE);
         } 
         
         public KeyspaceContext CreateKeyspaceContext(ISession session)
